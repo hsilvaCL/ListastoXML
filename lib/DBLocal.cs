@@ -17,28 +17,31 @@ namespace lib
          * https://docs.microsoft.com/en-us/dotnet/api/system.environment.expandenvironmentvariables?view=netframework-4.8
          */
         public static string sruta = Environment.ExpandEnvironmentVariables("%AppData%\\FileClass");
-        public static string sdbname = "Onbreak";
-        public static string shost = "localhost\\SQLEXPRESS";
+        public static string sdbname = "OnBreak";
+        public static string shost = "localhost";
 
-        public DBLocal() {
+        public DBLocal()
+        {
             RevisaDirectorio();
         }
 
         /*Creación de XML de respaldo*/
-        public void GeneraXML(object olistado) {
+        public void GeneraXML(object olistado)
+        {
             string snomclase = olistado.GetType().GenericTypeArguments[0].Name;
             XmlSerializer xmlFile = new System.Xml.Serialization.XmlSerializer(olistado.GetType());
-            
+
             using (FileStream fs = new FileStream(@sruta + "\\" + snomclase + ".xml", FileMode.Create))
             {
                 xmlFile.Serialize(fs, olistado);
                 fs.Close();
             }
-           
+
         }
 
         /*Recuperación de XML y creación de lista en función de la clase de negocio*/
-        public List<object> RecuperaXML(Type tipo) {
+        public List<object> RecuperaXML(Type tipo)
+        {
             /*Uso de tipo para instanciar una lista según la clase que corresponda*/
             IList lst = (IList)Activator.CreateInstance((typeof(List<>).MakeGenericType(tipo)));
 
@@ -60,7 +63,7 @@ namespace lib
             /*https://docs.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlconnection.connectiontimeout?view=netframework-4.8
                 https://docs.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlconnection?view=netframework-4.8
                 */
-            SqlConnection oConn = new SqlConnection("Data Source="+shost+";Initial Catalog="+ sdbname + ";Integrated Security=True;Connection Timeout=3");
+            SqlConnection oConn = new SqlConnection("Data Source=" + shost + ";Initial Catalog=" + sdbname + ";Integrated Security=True;Connection Timeout=3");
             RevisaDirectorio();
 
             try
@@ -70,9 +73,9 @@ namespace lib
             }
             catch (Exception ex)
             {
-                using (StreamWriter sw = File.AppendText(@sruta+"\\accesoDB.log"))
+                using (StreamWriter sw = File.AppendText(@sruta + "\\accesoDB.log"))
                 {
-                    sw.WriteLine(DateTime.Now.ToString()+":"+ex.Message);
+                    sw.WriteLine(DateTime.Now.ToString() + ":" + ex.Message);
                 }
 
                 return false;
@@ -82,9 +85,39 @@ namespace lib
         /*Valida la existencia del directorio que verifica los temporales
          https://www.dotnetperls.com/path
              */
-        public static void RevisaDirectorio() {
-           
-            if (!Directory.Exists(sruta))  Directory.CreateDirectory(sruta);
+        public static void RevisaDirectorio()
+        {
+
+            if (!Directory.Exists(sruta)) Directory.CreateDirectory(sruta);
+        }
+
+        /*Creación de XML de respaldo*/
+        public void GeneraXMLRegistro(object oRegistro)
+        {
+            string snomclase = oRegistro.GetType().Name;
+            XmlSerializer xmlFile = new System.Xml.Serialization.XmlSerializer(oRegistro.GetType());
+
+            int i = RevisaArchivo(snomclase);
+
+            using (FileStream fs = new FileStream(@sruta + "\\" + snomclase + i.ToString() + ".xml", FileMode.Create))
+            {
+                xmlFile.Serialize(fs, oRegistro);
+                fs.Close();
+            }
+
+        }
+
+        public int RevisaArchivo(string slnom)
+        {
+            int i = 0;
+
+            do
+            {
+                i++;
+            } while (File.Exists(sruta + "\\" + slnom + i.ToString() + ".xml"));
+
+            return i;
+
         }
 
     }
